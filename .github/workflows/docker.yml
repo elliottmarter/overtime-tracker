@@ -1,0 +1,71 @@
+name: Publish Docker image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Runs the image the way Unraid does (PUID 99, root-owned host folder)
+      # and fails the build if the app doesn't start or can't write its data.
+      - name: Smoke test
+        run: |
+          docker build -t overtime-tracker:test .
+          mkdir -p "$RUNNER_TEMP/data" && sudo chown root:root "$RUNNER_TEMP/data"
+          if docker run --rm overtime-tracker:test true; then
+            echo "Container started without APP_USERNAME/APP_PASSWORD" && exit 1
+          fi
+          docker run -d --name smoke -p 8080:8080 -e PUID=99 -e PGID=100 \
+            -e APP_USERNAME=smoke -e APP_PASSWORD=smoke-pass \
+            -v "$RUNNER_TEMP/data:/data" overtime-tracker:test
+          for i in $(seq 1 30); do curl -fsS http://localhost:8080/healthz && break; sleep 1; done
+          test "$(curl -s -o /dev/null -w '%{redirect_url}' http://localhost:8080/)" = http://localhost:8080/login
+          curl -fsS -c "$RUNNER_TEMP/jar" -d username=smoke -d password=wrong http://localhost:8080/login
+          test "$(curl -s -b "$RUNNER_TEMP/jar" -o /dev/null -w '%{http_code}' http://localhost:8080/)" = 302
+          curl -fsS -c "$RUNNER_TEMP/jar" -d username=smoke -d password=smoke-pass http://localhost:8080/login
+          curl -fsS -b "$RUNNER_TEMP/jar" http://localhost:8080/ | grep -q "Sign out"
+          curl -fsS -b "$RUNNER_TEMP/jar" -o /dev/null -w "%{http_code}\n" -d work_date=2026-10-01 -d hours=2 -d rate=25 -d ticket=SMOKE http://localhost:8080/overtime
+          curl -fsS -b "$RUNNER_TEMP/jar" http://localhost:8080/overtime | grep -q SMOKE
+          test "$(stat -c %u "$RUNNER_TEMP/data/overtime.db")" = 99
+          docker logs smoke
+          docker rm -f smoke
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

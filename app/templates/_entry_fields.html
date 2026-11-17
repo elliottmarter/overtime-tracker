@@ -1,0 +1,7 @@
+{% macro fields(e, rate, today) -%}
+<label>Date <input type="date" name="work_date" value="{{ e.work_date if e else today }}" required></label>
+<label>Hours <input name="hours" inputmode="decimal" placeholder="2.5 or 2:30" value="{{ e.hours|hrs|replace(' h', '') if e else '' }}" required></label>
+<label>Rate £/h <input name="rate" inputmode="decimal" value="{{ '%.2f'|format((e.rate if e else rate) / 100) }}" required></label>
+<label>Ticket <input name="ticket" value="{{ e.ticket if e else '' }}" placeholder="e.g. INC123456" maxlength="100"></label>
+<label class="grow">Notes <input name="note" value="{{ e.note if e else '' }}" placeholder="What was it for?" maxlength="500"></label>
+{%- endmacro %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_status.html" import badge %}
+{% block title %}Payslips · Overtime Tracker{% endblock %}
+{% block content %}
+<h1>Payslips</h1>
+<div class="filters">
+  <a class="btn ok" href="{{ url_for('payslip_new') }}">Add a payslip</a>
+  <span class="spacer"></span>
+  <a class="btn small ghost" href="{{ url_for('export_payslips') }}">Download CSV</a>
+</div>
+{% if payslips %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Paid on</th><th>Month</th><th class="num">Hours logged</th><th class="num">Hours paid</th><th class="num">Expected</th><th class="num">Paid</th><th class="num">Difference</th><th>Result</th></tr></thead>
+  <tbody>
+  {% for p in payslips %}
+    <tr>
+      <td class="nowrap"><a href="{{ url_for('payslip_edit', payslip_id=p.id) }}">{{ p.pay_date|nicedate }}</a></td>
+      <td>{{ p.covers_month|month if p.covers_month else '—' }}</td>
+      <td class="num">{{ p.claimed_hours|hrs }}</td>
+      <td class="num {{ 'neg' if p.hours_diff is not none and p.hours_diff < 0 }}">{{ p.hours_paid|hrs }}</td>
+      <td class="num">{{ p.claimed_pence|gbp }}</td>
+      <td class="num">{{ p.amount_paid|gbp }}</td>
+      <td class="num {{ 'neg' if p.diff < 0 }}">{{ p.diff|gbp(true) if p.diff else '—' }}</td>
+      <td>{{ badge(p) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><th colspan="4">Total</th><th class="num">{{ (payslips|sum(attribute='claimed_pence'))|gbp }}</th><th class="num">{{ t.paid.pence|gbp }}</th><th class="num {{ 'neg' if t.shortfall > 0 }}">{{ (-t.shortfall)|gbp(true) if t.shortfall else '—' }}</th><th></th></tr></tfoot>
+</table>
+</div>
+{% else %}
+<div class="empty">No payslips yet. When one arrives, add it here and tick the overtime it paid.</div>
+{% endif %}
+{% endblock %}

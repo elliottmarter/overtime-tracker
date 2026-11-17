@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Settings · Overtime Tracker{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+<section class="panel">
+  <h2 class="panel-title">Overtime rate</h2>
+  <form method="post" class="stack narrow">
+    <label>Hourly rate £ <input name="rate" inputmode="decimal" value="{{ '%.2f'|format(rate / 100) }}" required></label>
+    <label class="check"><input type="checkbox" name="apply_awaiting" value="1"> Also update overtime that isn't on a payslip yet</label>
+    <div><button class="btn ok">Save</button></div>
+  </form>
+  <p class="muted small">Each entry keeps the rate it was logged at, so changing this doesn't alter overtime that's already been paid. You can also set a different rate on a single entry.</p>
+</section>
+<section class="panel">
+  <h2 class="panel-title">Export</h2>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('export_entries') }}">Overtime entries (CSV)</a>
+    <a class="btn" href="{{ url_for('export_payslips') }}">Payslips (CSV)</a>
+  </div>
+  <p class="muted small">Your data is kept in <code>/data/overtime.db</code> inside the container. Back up that folder to keep it safe.</p>
+</section>
+{% endblock %}

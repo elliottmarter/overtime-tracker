@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_status.html" import badge %}
+{% block title %}{{ 'Payslip' if p else 'Add payslip' }} · Overtime Tracker{% endblock %}
+{% block content %}
+<h1>{% if p %}Payslip paid {{ p.pay_date|nicedate }} {{ badge(p) }}{% else %}Add a payslip{% endif %}</h1>
+
+<form method="post" class="payslip-form">
+<section class="panel">
+  <div class="entry-form">
+    <label>Pay date <input type="date" name="pay_date" value="{{ p.pay_date if p else today }}" required></label>
+    <label>Overtime month <input type="month" name="covers_month" id="covers_month" value="{{ p.covers_month if p else default_month }}"></label>
+    <label>Overtime hours paid <input name="hours_paid" id="hours_paid" inputmode="decimal" placeholder="optional" value="{{ p.hours_paid|hrs|replace(' h', '') if p and p.hours_paid is not none else '' }}"></label>
+    <label>Overtime amount paid £ <input name="amount_paid" id="amount_paid" inputmode="decimal" placeholder="0.00" value="{{ '%.2f'|format(p.amount_paid / 100) if p else '' }}" required></label>
+    <label class="grow">Notes <input name="note" value="{{ p.note if p else '' }}" maxlength="500"></label>
+  </div>
+  <p class="muted small">Enter the overtime line from the payslip (gross, before tax). If overtime appears on more than one line, add them together.</p>
+</section>
+
+<section class="panel">
+  <h2 class="panel-title">Overtime this payslip should cover</h2>
+  {% if entries %}
+  <p class="muted small">Entries from the overtime month are ticked for you. Untick anything that wasn't paid, or tick late claims from earlier months. Overtime already on another payslip isn't listed.</p>
+  <div class="table-wrap">
+  <table class="pick">
+    <thead><tr><th><input type="checkbox" id="all" aria-label="Tick all"></th><th>Date</th><th class="num">Hours</th><th class="num">Amount</th><th>Ticket</th><th>Notes</th></tr></thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td><input type="checkbox" name="entry" value="{{ e.id }}" data-month="{{ e.work_date[:7] }}" data-hours="{{ e.hours }}" data-pence="{{ e.pence }}" {{ 'checked' if p and e.payslip_id == p.id }}></td>
+        <td class="nowrap">{{ e.work_date|nicedate }}</td>
+        <td class="num">{{ e.hours|hrs }}</td>
+        <td class="num">{{ e.pence|gbp }}</td>
+        <td>{{ e.ticket }}</td>
+        <td>{{ e.note }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">No overtime is waiting for a payslip. <a href="{{ url_for('entries_page') }}#add">Log some first</a>, or save this payslip and link it later.</p>
+  {% endif %}
+
+  <div class="check" id="check">
+    <div><span class="muted">Ticked overtime</span><strong id="c-hours">0 h</strong> · <strong id="c-expected">£0.00</strong></div>
+    <div><span class="muted">Paid</span><strong id="c-paid">£0.00</strong></div>
+    <div><span class="muted">Difference</span><strong id="c-diff">—</strong></div>
+  </div>
+</section>
+
+<div class="actions">
+  <button class="btn ok">{{ 'Save' if p else 'Add payslip' }}</button>
+  <a class="btn ghost" href="{{ url_for('payslips_page') }}">Cancel</a>
+  {% if p %}<button class="btn danger" name="action" value="delete" formnovalidate data-confirm="Delete this payslip? Its overtime goes back to awaiting payment.">Delete</button>{% endif %}
+</div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+  (() => {
+    const boxes = [...document.querySelectorAll('input[name="entry"]')];
+    const month = document.getElementById("covers_month");
+    const amount = document.getElementById("amount_paid");
+    const hoursPaid = document.getElementById("hours_paid");
+    const all = document.getElementById("all");
+    const gbp = (p) => (p < 0 ? "−" : "") + "£" + (Math.abs(p) / 100).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const hrs = (h) => +h.toFixed(2) + " h";
+    const pence = (v) => { const n = parseFloat((v || "").replace(/[£,\s]/g, "")); return isNaN(n) ? 0 : Math.round(n * 100); };
+
+    function update() {
+      let h = 0, p = 0;
+      boxes.forEach((b) => { if (b.checked) { h += +b.dataset.hours; p += +b.dataset.pence; } });
+      const paid = pence(amount.value), diff = paid - p;
+      document.getElementById("c-hours").textContent = hrs(h);
+      document.getElementById("c-expected").textContent = gbp(p);
+      document.getElementById("c-paid").textContent = gbp(paid);
+      const d = document.getElementById("c-diff");
+      if (!p && !paid) { d.textContent = "—"; d.className = ""; if (all) all.checked = false; return; }
+      d.textContent = Math.abs(diff) < 1 ? "Matches" : (diff < 0 ? "Underpaid " + gbp(-diff) : "Overpaid " + gbp(diff));
+      d.className = Math.abs(diff) < 1 ? "good" : (diff < 0 ? "neg" : "");
+      if (all) all.checked = boxes.length > 0 && boxes.every((b) => b.checked);
+    }
+    function tickMonth() {
+      boxes.forEach((b) => { b.checked = !!month.value && b.dataset.month === month.value; });
+      update();
+    }
+    {% if not p %}tickMonth();{% endif %}
+    month.addEventListener("change", tickMonth);
+    boxes.forEach((b) => b.addEventListener("change", update));
+    amount.addEventListener("input", update);
+    if (all) all.addEventListener("change", () => { boxes.forEach((b) => (b.checked = all.checked)); update(); });
+    update();
+  })();
+</script>
+{% endblock %}

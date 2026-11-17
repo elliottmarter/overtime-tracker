@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "_status.html" import badge %}
+{% block content %}
+<h1>Overview</h1>
+
+<div class="tiles">
+  <div class="tile">
+    <div class="tile-label">Overtime worked</div>
+    <div class="tile-value">{{ t.worked.pence|gbp }}</div>
+    <div class="muted small">{{ t.worked.hours|hrs }} across {{ t.worked.n }} entr{{ 'y' if t.worked.n == 1 else 'ies' }}</div>
+  </div>
+  <div class="tile">
+    <div class="tile-label">Paid on payslips</div>
+    <div class="tile-value">{{ t.paid.pence|gbp }}</div>
+    <div class="muted small">{{ t.paid.n }} payslip{{ '' if t.paid.n == 1 else 's' }}</div>
+  </div>
+  <div class="tile">
+    <div class="tile-label">Awaiting a payslip</div>
+    <div class="tile-value">{{ t.awaiting.pence|gbp }}</div>
+    <div class="muted small"><a href="{{ url_for('entries_page', show='awaiting') }}">{{ t.awaiting.hours|hrs }} not yet paid</a></div>
+  </div>
+  <div class="tile {{ 'tile-bad' if t.shortfall > 0 else ('tile-good' if t.paid.n else '') }}">
+    <div class="tile-label">{{ 'Underpaid' if t.shortfall > 0 else ('Overpaid' if t.shortfall < 0 else 'Payslip shortfall') }}</div>
+    <div class="tile-value">{{ (t.shortfall|abs)|gbp }}</div>
+    <div class="muted small">{% if t.shortfall > 0 %}Owed on payslips already received{% elif t.shortfall < 0 %}Paid more than you logged{% else %}Every payslip matches{% endif %}</div>
+  </div>
+</div>
+
+<p class="muted">
+  Everything worked minus everything paid: <strong class="{{ 'neg' if t.outstanding > 0 }}">{{ t.outstanding|gbp }}</strong> still to come.
+  New entries use {{ rate|gbp }} an hour (<a href="{{ url_for('settings_page') }}">change</a>).
+</p>
+
+<div class="actions">
+  <a class="btn ok" href="{{ url_for('entries_page') }}#add">Log overtime</a>
+  <a class="btn" href="{{ url_for('payslip_new') }}">Add a payslip</a>
+</div>
+
+{% if t.problems %}
+<h2>Payslips that don't match</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Paid on</th><th>Month</th><th class="num">Expected</th><th class="num">Paid</th><th>Result</th></tr></thead>
+  <tbody>
+  {% for p in t.problems %}
+    <tr>
+      <td><a href="{{ url_for('payslip_edit', payslip_id=p.id) }}">{{ p.pay_date|nicedate }}</a></td>
+      <td>{{ p.covers_month|month if p.covers_month else '—' }}</td>
+      <td class="num">{{ p.claimed_pence|gbp }}</td>
+      <td class="num">{{ p.amount_paid|gbp }}</td>
+      <td>{{ badge(p) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+<h2>By month worked</h2>
+{% if months %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Month</th><th class="num">Hours</th><th class="num">Expected</th><th class="num">Awaiting</th><th>Payslip</th></tr></thead>
+  <tbody>
+  {% for m in months %}
+    <tr>
+      <td><a href="{{ url_for('entries_page', month=m.month) }}">{{ m.month|month }}</a></td>
+      <td class="num">{{ m.hours|hrs }}</td>
+      <td class="num">{{ m.pence|gbp }}</td>
+      <td class="num">{{ m.awaiting_hours|hrs if m.awaiting_hours else '—' }}</td>
+      <td>
+        {% for p in slips_by_month.get(m.month, []) %}
+          <a href="{{ url_for('payslip_edit', payslip_id=p.id) }}">{{ p.pay_date|nicedate }}</a> {{ badge(p) }}<br>
+        {% else %}
+          {% if m.awaiting_hours %}<a class="btn small" href="{{ url_for('payslip_new', month=m.month) }}">Add payslip</a>{% else %}—{% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty">No overtime logged yet. <a href="{{ url_for('entries_page') }}#add">Log your first entry</a>.</div>
+{% endif %}
+{% endblock %}

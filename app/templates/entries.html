@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_entry_fields.html" import fields %}
+{% block title %}Overtime · Overtime Tracker{% endblock %}
+{% block content %}
+<h1>Overtime</h1>
+
+<section class="panel" id="add">
+  <h2 class="panel-title">Log overtime</h2>
+  <form method="post" action="{{ url_for('entries_page') }}" class="entry-form">
+    {{ fields(None, rate, today) }}
+    <button class="btn ok">Add</button>
+  </form>
+</section>
+
+<div class="filters">
+  {% set month = form.get('month') %}
+  <a class="btn small {{ 'current' if show == 'all' }}" href="{{ url_for('entries_page', month=month) }}">All</a>
+  <a class="btn small {{ 'current' if show == 'awaiting' }}" href="{{ url_for('entries_page', show='awaiting', month=month) }}">Awaiting payment</a>
+  <a class="btn small {{ 'current' if show == 'paid' }}" href="{{ url_for('entries_page', show='paid', month=month) }}">On a payslip</a>
+  {% if month %}<span class="muted">Showing {{ month|month }} · <a href="{{ url_for('entries_page', show=show) }}">all months</a></span>{% endif %}
+  <span class="spacer"></span>
+  <a class="btn small ghost" href="{{ url_for('export_entries') }}">Download CSV</a>
+</div>
+
+{% if entries %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Date</th><th class="num">Hours</th><th class="num">Rate</th><th class="num">Amount</th><th>Ticket</th><th>Notes</th><th>Paid</th></tr></thead>
+  <tbody>
+  {% set ns = namespace(month='') %}
+  {% for e in entries %}
+    {% if e.work_date[:7] != ns.month %}{% set ns.month = e.work_date[:7] %}
+    <tr class="group"><td colspan="7">{{ ns.month|month }}</td></tr>
+    {% endif %}
+    <tr>
+      <td class="nowrap"><a href="{{ url_for('entry_edit', entry_id=e.id) }}">{{ e.work_date|nicedate }}</a></td>
+      <td class="num">{{ e.hours|hrs }}</td>
+      <td class="num">{{ e.rate|gbp }}</td>
+      <td class="num">{{ e.pence|gbp }}</td>
+      <td>{{ e.ticket }}</td>
+      <td>{{ e.note }}</td>
+      <td class="nowrap">{% if e.payslip_id %}<a href="{{ url_for('payslip_edit', payslip_id=e.payslip_id) }}">{{ e.paid_on|nicedate }}</a>{% else %}<span class="badge st-none">Awaiting</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><th>Total</th><th class="num">{{ total_hours|hrs }}</th><th></th><th class="num">{{ total_pence|gbp }}</th><th colspan="3"></th></tr></tfoot>
+</table>
+</div>
+{% else %}
+<div class="empty">Nothing here yet.</div>
+{% endif %}
+{% endblock %}

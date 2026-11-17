@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Overtime Tracker{% endblock %}</title>
+  <script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (_) {}</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('overview') }}">Overtime Tracker</a>
+    <div class="topbar-right">
+    {% if signed_in %}
+    <nav>
+      {% set ep = request.endpoint %}
+      <a href="{{ url_for('overview') }}" class="{{ 'active' if ep == 'overview' }}">Overview</a>
+      <a href="{{ url_for('entries_page') }}" class="{{ 'active' if ep in ('entries_page', 'entry_edit') }}">Overtime</a>
+      <a href="{{ url_for('payslips_page') }}" class="{{ 'active' if ep in ('payslips_page', 'payslip_new', 'payslip_edit') }}">Payslips</a>
+      <a href="{{ url_for('settings_page') }}" class="{{ 'active' if ep == 'settings_page' }}">Settings</a>
+      <form method="post" action="{{ url_for('logout') }}"><button class="nav-btn">Sign out</button></form>
+    </nav>
+    {% endif %}
+    <select id="theme" class="theme-picker" aria-label="Theme">
+      <option value="">Auto</option>
+      <option value="light">Light</option>
+      <option value="sepia">Sepia</option>
+      <option value="dark">Dark</option>
+    </select>
+    </div>
+  </header>
+  <main>
+    {% block messages %}
+    <div class="toasts" role="status" aria-live="polite">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">
+            <span>{{ message }}</span>
+            <button type="button" class="toast-close" aria-label="Dismiss">×</button>
+          </div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+    {% endblock %}
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    // Theme picker: remembered in this browser; "Auto" follows the system light/dark setting.
+    (() => {
+      const picker = document.getElementById("theme");
+      try { picker.value = localStorage.getItem("theme") || ""; } catch (_) {}
+      picker.addEventListener("change", () => {
+        const t = picker.value;
+        if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+        try { t ? localStorage.setItem("theme", t) : localStorage.removeItem("theme"); } catch (_) {}
+      });
+    })();
+
+    // Messages: close on ×, and fade out on their own unless they're errors.
+    document.querySelectorAll(".toasts .flash").forEach((toast) => {
+      const close = () => { toast.classList.add("leaving"); setTimeout(() => toast.remove(), 300); };
+      toast.querySelector(".toast-close").addEventListener("click", close);
+      if (!toast.classList.contains("error")) setTimeout(close, 5000);
+    });
+
+    // Ask before deleting.
+    document.addEventListener("submit", (e) => {
+      const msg = e.submitter && e.submitter.dataset.confirm;
+      if (msg && !confirm(msg)) e.preventDefault();
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

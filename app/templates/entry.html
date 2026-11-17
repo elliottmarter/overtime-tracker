@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_entry_fields.html" import fields %}
+{% block title %}Edit entry · Overtime Tracker{% endblock %}
+{% block content %}
+<h1>Edit overtime</h1>
+<section class="panel">
+  <form method="post" class="entry-form">
+    {{ fields(e, None, today) }}
+    <div class="actions">
+      <button class="btn ok">Save</button>
+      <a class="btn ghost" href="{{ url_for('entries_page') }}">Cancel</a>
+      <button class="btn danger" name="action" value="delete" formnovalidate data-confirm="Delete this entry?">Delete</button>
+    </div>
+  </form>
+  <p class="muted small">
+    {% if e.payslip_id %}On the payslip paid <a href="{{ url_for('payslip_edit', payslip_id=e.payslip_id) }}">{{ e.paid_on|nicedate }}</a>.
+    {% else %}Not on a payslip yet.{% endif %}
+  </p>
+</section>
+{% endblock %}
