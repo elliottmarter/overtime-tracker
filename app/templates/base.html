@@ -18,7 +18,7 @@
       <a href="{{ url_for('entries_page') }}" class="{{ 'active' if ep in ('entries_page', 'entry_edit') }}">Overtime</a>
       <a href="{{ url_for('payslips_page') }}" class="{{ 'active' if ep in ('payslips_page', 'payslip_new', 'payslip_edit') }}">Payslips</a>
       <a href="{{ url_for('settings_page') }}" class="{{ 'active' if ep == 'settings_page' }}">Settings</a>
-      <form method="post" action="{{ url_for('logout') }}"><button class="nav-btn">Sign out</button></form>
+      {% if auth_enabled %}<form method="post" action="{{ url_for('logout') }}"><button class="nav-btn">Sign out</button></form>{% endif %}
     </nav>
     {% endif %}
     <select id="theme" class="theme-picker" aria-label="Theme">

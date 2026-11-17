@@ -3,8 +3,8 @@
 # is writable by that user, even when Docker created the host folder as root.
 set -e
 
-if [ -z "$APP_USERNAME" ] || [ -z "$APP_PASSWORD" ]; then
-    echo "overtime-tracker: APP_USERNAME and APP_PASSWORD must both be set. Refusing to start." >&2
+if { [ -n "$APP_USERNAME" ] && [ -z "$APP_PASSWORD" ]; } || { [ -z "$APP_USERNAME" ] && [ -n "$APP_PASSWORD" ]; }; then
+    echo "overtime-tracker: set both APP_USERNAME and APP_PASSWORD to require a login, or neither to run without one." >&2
     exit 1
 fi
 

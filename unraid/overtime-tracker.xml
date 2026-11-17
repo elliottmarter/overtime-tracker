@@ -15,8 +15,8 @@
   <Config Name="Web UI port" Target="8080" Default="8086" Mode="tcp" Description="Port for the web interface" Type="Port" Display="always" Required="true" Mask="false">8086</Config>
   <Config Name="Data" Target="/data" Default="/mnt/user/appdata/overtime-tracker/data" Mode="rw" Description="Where the overtime database is stored" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/overtime-tracker/data</Config>
   <Config Name="Time zone" Target="TZ" Default="Europe/London" Description="Used for today's date when logging overtime" Type="Variable" Display="always" Required="false" Mask="false">Europe/London</Config>
-  <Config Name="Username" Target="APP_USERNAME" Default="" Description="Required. Username for the web UI login" Type="Variable" Display="always" Required="true" Mask="false"></Config>
-  <Config Name="Password" Target="APP_PASSWORD" Default="" Description="Required. Password for the web UI login. The container won't start without a username and password." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Username" Target="APP_USERNAME" Default="" Description="Optional. Username for the web UI login. Leave both username and password empty to run without a login." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="Password" Target="APP_PASSWORD" Default="" Description="Optional. Password for the web UI login. Set both or neither." Type="Variable" Display="always" Required="false" Mask="true"></Config>
   <Config Name="PUID" Target="PUID" Default="99" Description="User ID the app runs as" Type="Variable" Display="always" Required="false" Mask="false">99</Config>
   <Config Name="PGID" Target="PGID" Default="100" Description="Group ID the app runs as" Type="Variable" Display="always" Required="false" Mask="false">100</Config>
 </Container>

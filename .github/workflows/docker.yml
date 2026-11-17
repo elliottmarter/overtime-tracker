@@ -22,9 +22,13 @@ jobs:
         run: |
           docker build -t overtime-tracker:test .
           mkdir -p "$RUNNER_TEMP/data" && sudo chown root:root "$RUNNER_TEMP/data"
-          if docker run --rm overtime-tracker:test true; then
-            echo "Container started without APP_USERNAME/APP_PASSWORD" && exit 1
+          if docker run --rm -e APP_USERNAME=only-user overtime-tracker:test true; then
+            echo "Container started with a username but no password" && exit 1
           fi
+          docker run -d --name open -p 8081:8080 overtime-tracker:test
+          for i in $(seq 1 30); do curl -fsS http://localhost:8081/healthz && break; sleep 1; done
+          curl -fsS http://localhost:8081/ | grep -q "Overview"
+          docker rm -f open
           docker run -d --name smoke -p 8080:8080 -e PUID=99 -e PGID=100 \
             -e APP_USERNAME=smoke -e APP_PASSWORD=smoke-pass \
             -v "$RUNNER_TEMP/data:/data" overtime-tracker:test

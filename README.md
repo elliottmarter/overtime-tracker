@@ -35,12 +35,12 @@ that's already been paid. Both lists can be downloaded as CSV from **Settings**.
 docker run -d --name overtime-tracker -p 8080:8080 -v overtime-tracker:/data -e TZ=Europe/London -e APP_USERNAME=me -e APP_PASSWORD=pick-a-password --restart unless-stopped ghcr.io/elliottmarter/overtime-tracker:latest
 ```
 
-Change the username and password first: the container won't start without them. Then open
+Change the username and password first, or leave both out to run without a login. Then open
 <http://localhost:8080> (or `http://<server-ip>:8080`) and log in. Images are published for
 `amd64` and `arm64`.
 
 Or with Docker Compose, using the [docker-compose.yml](docker-compose.yml) in this repo (set
-`APP_USERNAME` and `APP_PASSWORD` in it first):
+`APP_USERNAME` and `APP_PASSWORD` in it if you want a login):
 
 ```bash
 docker compose up -d
@@ -57,7 +57,8 @@ Data lives in `/data/overtime.db` (SQLite) inside the container, so keep `/data`
    ```
 
 2. Go to **Docker → Add Container**, pick **overtime-tracker** from the *Template* dropdown,
-   choose a **Username** and **Password** (both required), check the other settings and click **Apply**.
+   optionally choose a **Username** and **Password** (set both for a login, or leave both empty),
+   check the other settings and click **Apply**.
 3. Open `http://<unraid-ip>:8086` (the template uses port 8086 so it doesn't clash with anything on 8080).
 
 Data is stored in `/mnt/user/appdata/overtime-tracker/data`, so appdata backups include it. Unraid
@@ -80,15 +81,16 @@ Version tags such as `:1.0.0` are published for tagged releases, if you'd rather
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `TZ` | `UTC` | Time zone used for today's date when logging overtime |
-| `APP_USERNAME` | **required** | Username for the web UI login |
-| `APP_PASSWORD` | **required** | Password for the web UI login. The container won't start without both |
+| `APP_USERNAME` | *(unset)* | Username for the web UI login |
+| `APP_PASSWORD` | *(unset)* | Password for the web UI login. Set both to require a login, or neither to run without one |
 | `PUID` / `PGID` | `1000` / `1000` | User and group the app runs as; `/data` is chowned to them on start (Unraid: `99` / `100`) |
 
 The hourly rate is set in the app under **Settings**, not here.
 
-You sign in on the app's own login page and stay signed in on that browser for 30 days, or until you
+With a username and password set, you sign in on the app's own login page and stay signed in on that browser for 30 days, or until you
 click **Sign out** or change the username or password. The login isn't encrypted on its own, so keep
-the port on your LAN or put it behind a reverse proxy with HTTPS.
+the port on your LAN or put it behind a reverse proxy with HTTPS. Without them, anyone who can reach
+the port can see and change your data, so only do that on a network you trust.
 
 ## Build from source
 

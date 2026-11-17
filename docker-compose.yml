@@ -9,8 +9,9 @@ services:
       TZ: Europe/London
       # PUID: 1000                 # user/group the app runs as and owns /data
       # PGID: 1000
-      APP_USERNAME: change-me      # required: login for the web UI;
-      APP_PASSWORD: change-me      # the container won't start without both
+      # Optional login for the web UI. Set both, or leave both out to run without a login.
+      # APP_USERNAME: change-me
+      # APP_PASSWORD: change-me
     volumes:
       - overtime-data:/data
     restart: unless-stopped

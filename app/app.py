@@ -19,8 +19,10 @@ import db
 TZ = ZoneInfo(os.environ.get("TZ") or "UTC")
 APP_USERNAME = os.environ.get("APP_USERNAME", "")
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
-if not (APP_USERNAME and APP_PASSWORD):
-    raise SystemExit("APP_USERNAME and APP_PASSWORD must both be set. Refusing to start.")
+if bool(APP_USERNAME) != bool(APP_PASSWORD):
+    raise SystemExit("Set both APP_USERNAME and APP_PASSWORD to require a login, or neither to run without one.")
+# With no username and password the app is open to anyone who can reach it.
+AUTH_ENABLED = bool(APP_USERNAME and APP_PASSWORD)
 
 app = Flask(__name__)
 app.secret_key = db.init_db()
@@ -128,6 +130,8 @@ def login_token():
 
 
 def signed_in():
+    if not AUTH_ENABLED:
+        return True
     return secrets.compare_digest(session.get("auth", ""), login_token())
 
 
@@ -166,6 +170,8 @@ def login():
 
 @app.post("/login")
 def login_submit():
+    if not AUTH_ENABLED:
+        return redirect(url_for("overview"))
     if login_locked():
         flash("Too many wrong attempts. Wait a minute and try again.", "error")
         return redirect(url_for("login", next=safe_next("") or None))
@@ -192,7 +198,7 @@ def logout():
 
 @app.context_processor
 def inject_globals():
-    return {"signed_in": signed_in(), "today": today()}
+    return {"signed_in": signed_in(), "auth_enabled": AUTH_ENABLED, "today": today()}
 
 
 @app.template_filter("gbp")
