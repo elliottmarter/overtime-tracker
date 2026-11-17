@@ -19,10 +19,10 @@ COPY entrypoint.sh /entrypoint.sh
 RUN mkdir -p /data
 
 VOLUME /data
-EXPOSE 8080
+EXPOSE 7391
 
 HEALTHCHECK --interval=1m --timeout=5s --start-period=10s \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7391/healthz', timeout=3)"
 
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:7391", "--workers", "1", "--threads", "4", "app:app"]

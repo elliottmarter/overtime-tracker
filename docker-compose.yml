@@ -4,7 +4,7 @@ services:
     # build: .                     # use this instead of image to build from source
     container_name: overtime-tracker
     ports:
-      - "8080:8080"
+      - "7391:7391"
     environment:
       TZ: Europe/London
       # PUID: 1000                 # user/group the app runs as and owns /data

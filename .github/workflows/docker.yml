@@ -25,21 +25,21 @@ jobs:
           if docker run --rm -e APP_USERNAME=only-user overtime-tracker:test true; then
             echo "Container started with a username but no password" && exit 1
           fi
-          docker run -d --name open -p 8081:8080 overtime-tracker:test
-          for i in $(seq 1 30); do curl -fsS http://localhost:8081/healthz && break; sleep 1; done
-          curl -fsS http://localhost:8081/ | grep -q "Overview"
+          docker run -d --name open -p 7392:7391 overtime-tracker:test
+          for i in $(seq 1 30); do curl -fsS http://localhost:7392/healthz && break; sleep 1; done
+          curl -fsS http://localhost:7392/ | grep -q "Overview"
           docker rm -f open
-          docker run -d --name smoke -p 8080:8080 -e PUID=99 -e PGID=100 \
+          docker run -d --name smoke -p 7391:7391 -e PUID=99 -e PGID=100 \
             -e APP_USERNAME=smoke -e APP_PASSWORD=smoke-pass \
             -v "$RUNNER_TEMP/data:/data" overtime-tracker:test
-          for i in $(seq 1 30); do curl -fsS http://localhost:8080/healthz && break; sleep 1; done
-          test "$(curl -s -o /dev/null -w '%{redirect_url}' http://localhost:8080/)" = http://localhost:8080/login
-          curl -fsS -c "$RUNNER_TEMP/jar" -d username=smoke -d password=wrong http://localhost:8080/login
-          test "$(curl -s -b "$RUNNER_TEMP/jar" -o /dev/null -w '%{http_code}' http://localhost:8080/)" = 302
-          curl -fsS -c "$RUNNER_TEMP/jar" -d username=smoke -d password=smoke-pass http://localhost:8080/login
-          curl -fsS -b "$RUNNER_TEMP/jar" http://localhost:8080/ | grep -q "Sign out"
-          curl -fsS -b "$RUNNER_TEMP/jar" -o /dev/null -w "%{http_code}\n" -d work_date=2026-10-01 -d hours=2 -d rate=25 -d ticket=SMOKE http://localhost:8080/overtime
-          curl -fsS -b "$RUNNER_TEMP/jar" http://localhost:8080/overtime | grep -q SMOKE
+          for i in $(seq 1 30); do curl -fsS http://localhost:7391/healthz && break; sleep 1; done
+          test "$(curl -s -o /dev/null -w '%{redirect_url}' http://localhost:7391/)" = http://localhost:7391/login
+          curl -fsS -c "$RUNNER_TEMP/jar" -d username=smoke -d password=wrong http://localhost:7391/login
+          test "$(curl -s -b "$RUNNER_TEMP/jar" -o /dev/null -w '%{http_code}' http://localhost:7391/)" = 302
+          curl -fsS -c "$RUNNER_TEMP/jar" -d username=smoke -d password=smoke-pass http://localhost:7391/login
+          curl -fsS -b "$RUNNER_TEMP/jar" http://localhost:7391/ | grep -q "Sign out"
+          curl -fsS -b "$RUNNER_TEMP/jar" -o /dev/null -w "%{http_code}\n" -d work_date=2026-10-01 -d hours=2 -d rate=25 -d ticket=SMOKE http://localhost:7391/overtime
+          curl -fsS -b "$RUNNER_TEMP/jar" http://localhost:7391/overtime | grep -q SMOKE
           test "$(stat -c %u "$RUNNER_TEMP/data/overtime.db")" = 99
           docker logs smoke
           docker rm -f smoke

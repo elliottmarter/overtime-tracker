@@ -32,11 +32,11 @@ that's already been paid. Both lists can be downloaded as CSV from **Settings**.
 ## Run it
 
 ```bash
-docker run -d --name overtime-tracker -p 8080:8080 -v overtime-tracker:/data -e TZ=Europe/London -e APP_USERNAME=me -e APP_PASSWORD=pick-a-password --restart unless-stopped ghcr.io/elliottmarter/overtime-tracker:latest
+docker run -d --name overtime-tracker -p 7391:7391 -v overtime-tracker:/data -e TZ=Europe/London -e APP_USERNAME=me -e APP_PASSWORD=pick-a-password --restart unless-stopped ghcr.io/elliottmarter/overtime-tracker:latest
 ```
 
 Change the username and password first, or leave both out to run without a login. Then open
-<http://localhost:8080> (or `http://<server-ip>:8080`) and log in. Images are published for
+<http://localhost:7391> (or `http://<server-ip>:7391`) and log in. Images are published for
 `amd64` and `arm64`.
 
 Or with Docker Compose, using the [docker-compose.yml](docker-compose.yml) in this repo (set
@@ -59,7 +59,7 @@ Data lives in `/data/overtime.db` (SQLite) inside the container, so keep `/data`
 2. Go to **Docker → Add Container**, pick **overtime-tracker** from the *Template* dropdown,
    optionally choose a **Username** and **Password** (set both for a login, or leave both empty),
    check the other settings and click **Apply**.
-3. Open `http://<unraid-ip>:8086` (the template uses port 8086 so it doesn't clash with anything on 8080).
+3. Open `http://<unraid-ip>:7391`.
 
 Data is stored in `/mnt/user/appdata/overtime-tracker/data`, so appdata backups include it. Unraid
 shows when a new version is available; click **Update** on the container to get it.
